@@ -276,23 +276,23 @@ using namespace json;
 int main() {
     std::ifstream fin("..\\test_json.txt");
     std::stringstream ss;
-    ss<<fin.rdbuf();
-    std::string json_str=std::string(ss.str());
+    ss << fin.rdbuf();
+    std::string json_str = std::string(ss.str());
 
-    auto json_node=parser(json_str).value();
+    auto json_node = parser(json_str).value();
 
-    std::cout<<json_node["person"]<<'\n'<<'\n';
-    std::get<Int>(json_node["person"]["age"].value)=99;
-    std::cout<<json_node["person"]<<'\n'<<'\n';
+    std::cout << json_node["person"] << '\n' << '\n';
+    std::get<Int>(json_node["person"]["age"].value) = 99;
+    std::cout << json_node["person"] << '\n' << '\n';
 
-    std::cout<<json_node<<'\n'<<'\n';
-    std::string newitem="{\"type\":\"home2\",\"number\": \"555-5348\"}";
+    std::cout << json_node << '\n' << '\n';
+    std::string newitem = "{\"type\":\"home2\",\"number\": \"555-5348\"}";
 
-    auto nitem= parser(newitem).value();
-    std::cout<<nitem<<'\n'<<'\n';
+    auto nitem = parser(newitem).value();
+    std::cout << nitem << '\n' << '\n';
 
     std::get<Array>(json_node["person"]["contact_numbers"].value).push_back(nitem);
-    std::cout<<json_node<<'\n'<<'\n';
+    std::cout << json_node << '\n' << '\n';
 
     return 0;
 }
