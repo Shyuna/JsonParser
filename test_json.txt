@@ -1,0 +1,38 @@
+{
+  "person": {
+    "name": "John Doe",
+    "age": 30,
+    "gender": "male",
+    "is_student": false,
+    "address": {
+      "street": "123 Main Street",
+      "city": "Anytown",
+      "state": "CA",
+      "zipcode": "12345"
+    },
+    "contact_numbers": [
+      {
+        "type": "home",
+        "number": null
+      },
+      {
+        "type": "work",
+        "number": "555-5678"
+      }
+    ]
+  },
+  "products": [
+    {
+      "name": "Smartphone",
+      "price": 599.99,
+      "in_stock": true,
+      "features": ["5G connectivity", "6.5-inch OLED display", "128GB storage"]
+    },
+    {
+      "name": "Laptop",
+      "price": 1299.99,
+      "in_stock": false,
+      "features": ["15.6-inch Full HD display", "Intel Core i7 processor", "16GB RAM"]
+    }
+  ]
+}

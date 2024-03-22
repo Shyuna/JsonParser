@@ -1,0 +1,7 @@
+# ninja log v5
+1	168	7327880847418707	build.ninja	c821653aebc58f00
+786	1105	7327876314195725	cpptest.exe	67b633244d5cdcea
+1	1649	7327880896326038	CMakeFiles/JsonParser.dir/jsonParser.cpp.obj	e99ca4e1bbf62059
+1651	2219	7327880902007380	JsonParser.exe	c606b1c4777effab
+2	1086	7327881660403800	CMakeFiles/JsonParser.dir/jsonParser.cpp.obj	e99ca4e1bbf62059
+1087	1401	7327881663573549	JsonParser.exe	c606b1c4777effab

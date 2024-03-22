@@ -1,0 +1,3 @@
+C:/Users/wsy/Desktop/JsonParser/cmake-build-debug/CMakeFiles/JsonParser.dir
+C:/Users/wsy/Desktop/JsonParser/cmake-build-debug/CMakeFiles/edit_cache.dir
+C:/Users/wsy/Desktop/JsonParser/cmake-build-debug/CMakeFiles/rebuild_cache.dir
