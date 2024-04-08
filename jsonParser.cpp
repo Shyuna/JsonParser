@@ -5,7 +5,7 @@
 #include <fstream>
 #include <sstream>
 #include <string>
-#include <optional>
+//#include <optional>
 #include <expected>
 
 namespace json {
@@ -400,7 +400,7 @@ namespace json {
 using namespace json;
 
 int main() {
-    std::ifstream fin(".\\test_json.txt");
+    std::ifstream fin("..\\test_json.txt");
     std::stringstream ss;
     ss << fin.rdbuf();
     std::string json_str = std::string(ss.str());
