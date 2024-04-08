@@ -4,6 +4,9 @@
 #include <map>
 #include <fstream>
 #include <sstream>
+#include <string>
+#include <optional>
+#include <expected>
 
 namespace json {
     struct Node;
@@ -49,28 +52,32 @@ namespace json {
         std::string_view str;
         size_t pos = 0;
 
-        auto parse_null() -> std::optional<Value> {
+        auto parse_null() -> std::expected<Value,std::string> {
             if (str.substr(pos, 4) == "null") {
                 pos += 4;
                 return Null{};
             }
-            return {};
+
+            std::string error_message = std::string(str.substr(pos, 4)) + std::string(" is not defined, wanna use \"null\"? ");
+            return std::unexpected(error_message);
         }
 
-        auto parse_true() -> std::optional<Value> {
+        auto parse_true() -> std::expected<Value, std::string> {
             if (str.substr(pos, 4) == "true") {
                 pos += 4;
                 return true;
             }
-            return {};
+            std::string error_message = std::string(str.substr(pos, 4)) + std::string(" is not defined, wanna use \"true\"? ");
+            return std::unexpected(error_message);
         }
 
-        auto parse_false() -> std::optional<Value> {
+        auto parse_false() -> std::expected<Value, std::string> {
             if (str.substr(pos, 5) == "false") {
                 pos += 5;
                 return false;
             }
-            return {};
+            std::string error_message = std::string(str.substr(pos, 5)) + std::string(" is not defined, wanna use \"false\"? ");
+            return std::unexpected(error_message);
         }
 
         void parse_whitespace() {
@@ -79,12 +86,14 @@ namespace json {
             }
         }
 
-        auto parse_numbers() -> std::optional<Value> {
+        auto parse_numbers() -> std::expected<Value, std::string> {
             parse_whitespace();
+            
             size_t endpos = pos;
             while (endpos < str.size() && (std::isdigit(str[endpos]) || str[endpos] == '.' || str[endpos] == 'e')) {
                 endpos++;
             }
+            
             std::string num = std::string(str.substr(pos, endpos - pos));
             pos = endpos;
             if (num.find('.') != num.npos || num.find('e') != num.npos) {
@@ -93,7 +102,8 @@ namespace json {
                     return ret;
                 }
                 catch (...) {
-                    return {};
+                    std::string error_message = std::string("try parsing ") +num+ std::string(" to float, but failed.");
+                    return std::unexpected(error_message);
                 }
             } else {
                 try {
@@ -101,12 +111,13 @@ namespace json {
                     return ret;
                 }
                 catch (...) {
-                    return {};
+                    std::string error_message = std::string("try parsing ") + num + std::string(" to integer, but failed.");
+                    return std::unexpected(error_message);
                 }
             }
         }
 
-        auto parse_array() -> std::optional<Value> {
+        auto parse_array() -> std::expected<Value, std::string> {
             if (str[pos] == '[') {
                 pos++;
             }
@@ -114,17 +125,29 @@ namespace json {
             while (pos < str.size() && str[pos] != ']') {
                 parse_whitespace();
                 auto tmp = parse_value();
-                ret.push_back(tmp.value());
+                if (tmp.has_value()) {
+                    ret.push_back(tmp.value());
+                }
+                else {
+                    return tmp;
+                }
+                
+                parse_whitespace();
+
                 while (pos < str.size() && str[pos] == ',') {
                     pos++;
                 }
                 parse_whitespace();
             }
+            if (str[pos] != ']') {
+                std::string error_message = std::string("failed to find \']\'");
+                return std::unexpected(error_message);
+            }
             pos++;
             return ret;
         }
 
-        auto parse_object() -> std::optional<Value> {
+        auto parse_object() -> std::expected<Value, std::string> {
             if (str[pos] == '{') {
                 pos++;
             }
@@ -133,8 +156,8 @@ namespace json {
 
             while (pos < str.size() && str[pos] != '}') {
                 auto key = parse_string();
-                if (!std::holds_alternative<String>(key.value())) {
-                    return {};
+                if (!key.has_value()) {
+                    return std::unexpected("key of objects isnt string");
                 }
                 parse_whitespace();
                 if (str[pos] == ':') {
@@ -143,7 +166,13 @@ namespace json {
                 parse_whitespace();
                 auto val = parse_value();
 
-                obj[std::get<String>(key.value())] = val.value();
+                if (val.has_value()) {
+                    obj[std::get<String>(key.value())] = val.value();
+                }
+                else {
+                    return val;
+                }
+              
 
                 parse_whitespace();
                 while (pos < str.size() && str[pos] == ',') {
@@ -152,11 +181,16 @@ namespace json {
                 parse_whitespace();
 
             }
+
+            if (str[pos] != '}') {
+                std::string error_message = std::string("failed to find \'}\'");
+                return std::unexpected(error_message);
+            }
             pos++;
             return obj;
         }
 
-        auto parse_string() -> std::optional<Value> {
+        auto parse_string() -> std::expected<Value, std::string> {
             if (str[pos] == '"') {
                 pos++;
             }
@@ -164,44 +198,136 @@ namespace json {
             while (endpos < str.size() && str[endpos] != '"') {
                 endpos++;
             }
+            if (str[endpos] != '"') {
+                std::string error_message = std::string("failed to find \'\"\'");
+                return std::unexpected(error_message);
+            }
             std::string ss = std::string(str.substr(pos, endpos - pos));
             pos = endpos + 1;
             return ss;
         }
 
-        auto parse_value() -> std::optional<Value> {
+        auto parse_value() -> std::expected<Value, std::string> {
             parse_whitespace();
             switch (str[pos]) {
                 case 'n':
-                    return parse_null();
+                {
+                    auto ret = parse_null();
+                    if (ret.has_value()) {
+                        return ret.value();
+                    }
+                    else {
+                        std::cout << ret.error() << std::endl;
+                        exit(0);
+                    }
+                }
                 case 't':
-                    return parse_true();
+                {
+                    auto ret = parse_true();
+                    if (ret.has_value()) {
+                        return ret.value();
+                    }
+                    else {
+                        std::cout << ret.error() << std::endl;
+                        exit(0);
+                    }
+                }
+                    
                 case 'f':
-                    return parse_false();
+                {
+                    auto ret = parse_false();
+                    if (ret.has_value()) {
+                        return ret.value();
+                    }
+                    else {
+                        std::cout << ret.error() << std::endl;
+                        exit(0);
+                    }
+                }
+                 
                 case '[':
-                    return parse_array();
+                {
+                    auto ret = parse_array();
+                    if (ret.has_value()) {
+                        return ret.value();
+                    }
+                    else {
+                        std::cout << ret.error() << std::endl;
+                        exit(0);
+                    }
+                }
+
                 case '{':
-                    return parse_object();
+                {
+                    auto ret = parse_object();
+                    if (ret.has_value()) {
+                        return ret.value();
+                    }
+                    else {
+                        std::cout << ret.error() << std::endl;
+                        exit(0);
+                    }
+                }
+
                 case '"':
-                    return parse_string();
+                {
+                    auto ret = parse_string();
+                    if (ret.has_value()) {
+                        return ret.value();
+                    }
+                    else {
+                        std::cout << ret.error() << std::endl;
+                        exit(0);
+                    }
+                }
+
                 default:
-                    return parse_numbers();
+                {
+                    if (std::isdigit(str[pos])) {
+                        auto ret = parse_numbers();
+                        if (ret.has_value()) {
+                            return ret.value();
+                        }
+                        else {
+                            std::cout << ret.error() << std::endl;
+                            exit(0);
+                        }
+                    }
+                    else {
+                        if (str[pos] == ']') {
+                            return std::unexpected("find ']' without '[' infront of");
+                        }
+                        else if (str[pos] == '}') {
+                            return std::unexpected("find '}' without '{' infront of");
+                        }
+                        std::string error_message = std::string("find ") + str[pos] + std::string(" at the beginning, cant parse");
+                        return std::unexpected(error_message);
+                    }
+                    
+                }
             }
         }
 
-        auto parse() -> std::optional<Node> {
+        auto parse() -> std::expected<Node, std::string> {
             parse_whitespace();
             auto val = parse_value();
-            if (val) {
-                return Node{*val};
+
+            if (val.has_value()) {
+                return Node(val.value());
             }
-            return {};
+
+            return std::unexpected(val.error());
         }
     };
 
-    auto parser(std::string_view json_str) -> std::optional<Node> {
+    auto parser(std::string_view json_str) -> std::expected<Node, std::string> {
         JsonParser p = {json_str};
-        return p.parse();
+        auto json_val = p.parse();
+        if (json_val.has_value()) {
+            return json_val.value();
+        }
+        std::cout << json_val.error() << std::endl;
+        return std::unexpected(json_val.error());
     }
 
     class JsonGenerator {
@@ -274,7 +400,7 @@ namespace json {
 using namespace json;
 
 int main() {
-    std::ifstream fin("..\\test_json.txt");
+    std::ifstream fin(".\\test_json.txt");
     std::stringstream ss;
     ss << fin.rdbuf();
     std::string json_str = std::string(ss.str());
